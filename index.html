@@ -9,67 +9,93 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
+    <!-- FIREBASE (JANGAN DIHAPUS - INI BUAT KIRIM PESAN KE INBOX) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+        // --- PENTING: GANTI INI DENGAN KODE DARI FIREBASE CONSOLE KAMU ---
+        const firebaseConfig = {
+            apiKey: "ISI_API_KEY_DISINI",
+            authDomain: "ISI_AUTH_DOMAIN_DISINI",
+            projectId: "ISI_PROJECT_ID_DISINI",
+            storageBucket: "ISI_STORAGE_BUCKET_DISINI",
+            messagingSenderId: "ISI_SENDER_ID_DISINI",
+            appId: "ISI_APP_ID_DISINI"
+        };
+        // -----------------------------------------------------------------
+
+        let db;
+        try {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            console.log("Database Connected");
+        } catch (e) {
+            console.log("Firebase config belum diisi");
+        }
+
+        window.kirimPesanKeInbox = async function() {
+            const pesan = document.getElementById('wa-input').value;
+            const btn = document.getElementById('btn-kirim');
+            
+            if(!pesan) { alert("Isi pesannya dulu dong sayang! 😜"); return; }
+            
+            btn.innerText = "Mengirim...";
+            btn.disabled = true;
+
+            try {
+                if(db) {
+                    await addDoc(collection(db, "inbox_chelsea"), {
+                        pesan: pesan,
+                        waktu: new Date().toLocaleString()
+                    });
+                    alert("Pesan berhasil dikirim ke Inbox Mamas! ❤️");
+                    document.getElementById('wa-input').value = "";
+                    closeWindow('win-msg-mamas');
+                } else {
+                    alert("Database belum disetting. Pesan tidak terkirim. (Hubungi Mas Fuad)");
+                }
+            } catch (e) {
+                alert("Gagal kirim. Cek koneksi internet ya.");
+                console.error(e);
+            }
+            btn.innerText = "KIRIM KE INBOX";
+            btn.disabled = false;
+        }
+    </script>
+
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    colors: {
-                        'win-gray': '#c0c0c0',
-                        'win-blue': '#000080',
-                        'chelsea-pink': '#ffc0cb',
-                        'deep-purple': '#4a0e4e',
-                    },
-                    fontFamily: {
-                        'pixel': ['"VT323"', 'monospace'],
-                        'body': ['"Quicksand"', 'sans-serif'],
-                    }
+                    colors: { 'win-gray': '#c0c0c0', 'win-blue': '#000080', 'chelsea-pink': '#ffc0cb', 'deep-purple': '#4a0e4e' },
+                    fontFamily: { 'pixel': ['"VT323"', 'monospace'], 'body': ['"Quicksand"', 'sans-serif'] }
                 }
             }
         }
     </script>
     <style>
-        /* Retro Windows Style */
         .win-box { background-color: #c0c0c0; border-top: 2px solid #fff; border-left: 2px solid #fff; border-right: 2px solid #808080; border-bottom: 2px solid #808080; box-shadow: 1px 1px 0 #000; }
         .win-box-inset { background-color: #fff; border-top: 2px solid #808080; border-left: 2px solid #808080; border-right: 2px solid #fff; border-bottom: 2px solid #fff; }
         .win-header { background: linear-gradient(90deg, #ff1493, #ff69b4); color: white; padding: 2px 4px; font-family: 'Quicksand', sans-serif; font-weight: bold; display: flex; align-items: center; justify-content: space-between; }
         .win-btn { background: #c0c0c0; border-top: 1px solid #fff; border-left: 1px solid #fff; border-right: 1px solid #000; border-bottom: 1px solid #000; min-width: 20px; text-align: center; cursor: pointer; font-size: 12px; line-height: 14px; }
         .win-btn:active { border-top: 1px solid #000; border-left: 1px solid #000; border-right: 1px solid #fff; border-bottom: 1px solid #fff; }
-        
-        /* Desktop Icon */
         .desktop-icon { width: 80px; display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer; padding: 5px; border: 1px solid transparent; margin-bottom: 5px; }
         .desktop-icon:hover { border: 1px dotted white; background: rgba(255, 255, 255, 0.2); }
         .desktop-icon img { width: 48px; height: 48px; margin-bottom: 4px; filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.3)); }
         .icon-label { color: white; font-family: 'Quicksand', sans-serif; font-size: 11px; text-shadow: 1px 1px 2px black; background: rgba(0,0,0,0.2); padding: 2px 4px; border-radius: 4px; line-height: 1.2; }
-
-        /* Window Animation - Force Hidden Initially via CSS */
-        .window { 
-            position: absolute; 
-            display: none; /* KUNCI MATI BIAR GAK MUNCUL */
-            flex-direction: column; 
-            resize: both; 
-            overflow: hidden; 
-            min-width: 200px; 
-            min-height: 150px; 
-            animation: popUp 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-        }
-        .window.active { 
-            display: flex !important; /* Baru muncul kalau dipanggil */
-            z-index: 50; 
-        }
+        
+        /* Force hidden by default */
+        .window { position: absolute; display: none !important; flex-direction: column; resize: both; overflow: hidden; min-width: 200px; min-height: 150px; animation: popUp 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .window.active { display: flex !important; z-index: 50; }
         @keyframes popUp { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-        /* Boot Screen */
         #boot-screen { font-family: 'VT323', monospace; background: black; color: #00ff00; z-index: 9999; }
         .typing-cursor::after { content: '█'; animation: blink 1s infinite; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-
-        /* Taskbar */
         #taskbar { background: #c0c0c0; border-top: 2px solid #fff; box-shadow: 0 -2px 2px rgba(0,0,0,0.1); }
-        
-        /* CRT Effect */
         .scanlines { background: linear-gradient( to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1) ); background-size: 100% 4px; position: fixed; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 9998; opacity: 0.3; }
         
-        /* Candle Game Styles */
         .cake-container { position: relative; width: 250px; height: 150px; background: #ffc0cb; border-radius: 10px 10px 0 0; display: flex; justify-content: space-around; align-items: flex-end; padding-bottom: 20px; border-bottom: 10px solid #d45d79; }
         .candle { width: 15px; height: 60px; background: repeating-linear-gradient(45deg, #fff, #fff 5px, #ff69b4 5px, #ff69b4 10px); position: relative; border-radius: 3px; }
         .flame { width: 20px; height: 30px; background: radial-gradient(ellipse at bottom, #ffee00, #ff9900, #ff0000); border-radius: 50% 50% 20% 20%; position: absolute; top: -35px; left: 50%; transform: translateX(-50%); animation: flicker 0.5s infinite alternate; cursor: pointer; box-shadow: 0 0 10px #ff9900; transition: opacity 0.3s; }
@@ -78,54 +104,37 @@
         .smoke.active { animation: smokeRise 1s forwards; }
         @keyframes flicker { 0% { transform: translateX(-50%) scale(1); opacity: 1; } 100% { transform: translateX(-50%) scale(1.1); opacity: 0.8; } }
         @keyframes smokeRise { 0% { opacity: 0.8; top: -35px; } 100% { opacity: 0; top: -80px; transform: translateX(-50%) scale(2); } }
-
-        /* Scrollbar custom */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #888; }
-        ::-webkit-scrollbar-thumb:hover { background: #555; }
-        
+        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #f1f1f1; } ::-webkit-scrollbar-thumb { background: #888; }
         @media (max-width: 640px) { .window { width: 90% !important; left: 5% !important; top: 5% !important; max-height: 80vh; } }
     </style>
 </head>
 <body class="overflow-hidden bg-[#008080] h-screen select-none">
     
-    <!-- GANTI LAGU DI SINI -->
     <audio id="bg-music" loop>
         <source src="https://audio.jukehost.co.uk/vdoQtXrOwDkIV71BKmp7Cqxo6brez5HF" type="audio/mpeg">
     </audio>
 
     <div class="scanlines"></div>
 
-    <!-- 1. BOOT SCREEN -->
     <div id="boot-screen" class="fixed inset-0 flex flex-col justify-center items-center p-8 text-xl leading-relaxed cursor-pointer" onclick="bootSystem()">
         <div class="max-w-2xl w-full">
             <p class="mb-2">BIOS Date 01/24/26 11:04:00 Ver: 20.07</p>
             <p class="mb-2">CPU: Love Core i9-9999K @ 5.0GHz</p>
             <p class="mb-4">Memory Test: 1048576K OK</p>
             <div id="boot-text" class="text-white space-y-1"></div>
-            <div id="click-prompt" class="mt-8 text-center hidden animate-pulse text-yellow-400">
-                [ KLIK LAYAR UNTUK MASUK KE SYSTEM ]
-            </div>
+            <div id="click-prompt" class="mt-8 text-center hidden animate-pulse text-yellow-400">[ KLIK LAYAR UNTUK MASUK KE SYSTEM ]</div>
         </div>
     </div>
 
-    <!-- 2. LOGIN SCREEN -->
     <div id="login-screen" class="fixed inset-0 bg-[#000080] hidden z-[60] flex flex-col justify-center items-center">
         <div class="win-box p-1 bg-[#c0c0c0] rounded-sm">
-            <div class="win-header mb-4 bg-gradient-to-r from-blue-800 to-blue-600">
-                <span>Welcome to ChelseaOS</span>
-            </div>
+            <div class="win-header mb-4"><span>Welcome to ChelseaOS</span></div>
             <div class="flex gap-6 p-6 items-center">
-                <div class="w-24 h-24 bg-white border-2 border-gray-500 p-1">
-                    <!-- FOTO PROFIL (GANTI DISINI) -->
-                    <img src="https://i.pinimg.com/564x/c9/22/68/c92268d92cf2dbf96e3195683d9d3af9.jpg" class="w-full h-full object-cover">
-                </div>
+                <div class="w-24 h-24 bg-white border-2 border-gray-500 p-1"><img src="https://i.pinimg.com/564x/c9/22/68/c92268d92cf2dbf96e3195683d9d3af9.jpg" class="w-full h-full object-cover"></div>
                 <div class="flex flex-col gap-3">
                     <h2 class="text-xl font-bold font-body">Chealsea R.C.</h2>
                     <p class="text-sm text-gray-600">Type your password to log on</p>
                     <div class="flex flex-col gap-2">
-                        <!-- Input Password Baru -->
                         <input type="password" id="login-pass" placeholder="Masukan password disini" class="win-box-inset px-2 py-1 w-64 bg-white focus:outline-none font-body text-sm">
                         <button onclick="checkLogin()" class="win-btn px-4 py-1 font-bold active:translate-y-px bg-green-200 self-start">➡️ MASUK</button>
                     </div>
@@ -135,13 +144,7 @@
         </div>
     </div>
 
-    <!-- 3. DESKTOP ENVIRONMENT -->
-    <!-- GANTI WALLPAPER DI SINI (Dalam URL) -->
-    <main id="desktop" 
-          class="relative w-full h-full hidden bg-cover bg-center"
-          style="background-image: url('https://i.pinimg.com/originals/91/92/2e/91922e37905f0d57d77b814a0f44358a.gif');">
-        
-        <!-- Desktop Icons -->
+    <main id="desktop" class="relative w-full h-full hidden bg-cover bg-center" style="background-image: url('https://i.pinimg.com/originals/91/92/2e/91922e37905f0d57d77b814a0f44358a.gif');">
         <div class="absolute top-4 left-4 grid grid-cols-2 gap-x-4 gap-y-2 w-[180px]">
             <div class="desktop-icon" onclick="openWindow('win-letter')"><img src="https://cdn-icons-png.flaticon.com/512/3033/3033143.png"><span class="icon-label">SuratCinta.txt</span></div>
             <div class="desktop-icon" onclick="openWindow('win-gallery')"><img src="https://cdn-icons-png.flaticon.com/512/3342/3342137.png"><span class="icon-label">FotoKita_HD</span></div>
@@ -155,545 +158,200 @@
             <div class="desktop-icon" onclick="openWindow('win-error')"><img src="https://cdn-icons-png.flaticon.com/512/3342/3342176.png"><span class="icon-label">Mantan</span></div>
         </div>
 
-        <!-- === WINDOWS (SEMUA PAKAI STYLE DISPLAY NONE) === -->
-
-        <!-- 1. Window Surat -->
-        <div id="win-letter" class="window win-box w-[500px] h-[400px] top-10 left-[220px] z-40" style="display: none;">
-            <div class="win-header cursor-move" onmousedown="dragStart(event, 'win-letter')">
-                <span>📝 SuratCinta.txt - Notepad</span>
-                <div class="flex gap-1"><button class="win-btn px-2" onclick="closeWindow('win-letter')">X</button></div>
-            </div>
+        <!-- Windows -->
+        <div id="win-letter" class="window win-box w-[500px] h-[400px] top-10 left-[220px]" style="display: none;">
+            <div class="win-header" onmousedown="dragStart(event, 'win-letter')"><span>📝 SuratCinta.txt</span><button class="win-btn" onclick="closeWindow('win-letter')">X</button></div>
             <div class="flex-1 win-box-inset m-1 p-4 overflow-y-auto font-pixel text-lg bg-white leading-6">
-                <!-- ISI SURAT -->
-                <p>Halo sayang!!!!! 😇😇</p>
-                <p>bagaimana bisa masuk kan??????? 😁😁😁</p>
-                <br>
-                <p>alhamdulillah ..</p>
-                <p>Lihat lihat!!!!! ada yang berumur 19 tahun sekarang !!!!🤩🤩🤩</p>
-                <p>Pertama-tama mas cuma mau ucapin selamat ulang tahun yang ke-19 tahun ya sayang 🎉🎂🎀💗🥳</p>
-                <p>semoga Panjang umur, di sehatkan badannya, di mudahkan segala urusannya, dan apa apa yang di cita-citakan tercapai semua ya cantik .. 🤲🤲 aamiin ...</p>
-                <br>
-                <p class="text-xl text-chelsea-pink font-body">𝐻𝒶𝓅𝓅𝓎 𝒷𝒾𝓇𝓉𝒽𝒹𝒶𝓎</p>
-                <br>
-                <p>Di tanggal 23 Februari 2007 lahir lah seorang bayi perempuan bernama CHEALSEA REGITA CAHYANI 👶🏻</p>
-                <p>Bayi ini sangat sangat kuat! yang dimana dari lahir saja sudah di bawa perjalanan jauh sebelum lahir. Bayangkan dari Depok ke Sukabumi naik motor untuk melahirkan wanita yang sangat kuat hingga sekarang!!! WOWWW 🤯🤯</p>
-                <p>Dan lihat! sekarang anak ini menjadi tumbuh menjadi anak dewasa yang kuat, yang rajin, yang sholehah, yang cantik ..</p>
-                <p>🎀🫶🏻💌💓</p>
-                <br>
-                <p>Betulan deh .. betapa senangnya mamas bisa bertemu sayang mamas, bisa temani sayang sampai ulang tahun ini!!</p>
-                <p>pokoknya sayang harus sehat jasmani dan rohaninya, sayang harus menjadi anak yang lebih kuat lagi ya, menjadi anak yang lebih dewasa lagi, lebih berbakti lagi kepada orang tua sayang .. aamiin.. </p>
-                <br>
-                <p>intiya mamas hanya bisa mendoakan dan mensuport sayang, lakuin apa yang sayang ingin lakuin kedepannya ya .. selama itu baik untuk diri sayang dan tidak merugikan orang lain .. lakuin ya sayang, tidak boleh takut, tidak boleh ragu, insyallah mamas pasti akan selalu di sini menemani sayang mamas!!1</p>
-                <br>
-                <p>sayanggg ... </p>
-                <p>maaf yaa mamas belum bisa kasih apaa apaa, mamas hanya bisa memberikan doa yang terbaik untuk sayang .. terimakasih juga sudah bertahan hingga sekarang ya cantik. sayang hebat, sayang luar biasa, sayang tangguh. Mamas salut dengan sayang!!!!</p>
-                <br>
-                <p>I LOVEE YOUUU SO MUCHHH SAYANG MAMASSSSS .. sehat sehat terus ya cantik</p>
-                <p>🫶🏻🥹❤️‍🩹</p>
+                <p>Halo sayang!!!!! 😇😇</p><p>bagaimana bisa masuk kan??????? 😁😁😁</p><br>
+                <p>alhamdulillah .. Lihat lihat!!!!! ada yang berumur 19 tahun sekarang !!!!🤩🤩🤩</p>
+                <p>Pertama-tama mas cuma mau ucapin selamat ulang tahun yang ke-19 tahun ya sayang 🎉🎂🎀💗🥳 semoga Panjang umur, di sehatkan badannya, di mudahkan segala urusannya...</p><br>
+                <p class="text-xl text-chelsea-pink font-body">𝐻𝒶𝓅𝓅𝓎 𝒷𝒾𝓇𝓉𝒽𝒹𝒶𝓎</p><br>
+                <p>Di tanggal 23 Februari 2007 lahir lah seorang bayi perempuan bernama CHEALSEA REGITA CAHYANI 👶🏻...</p>
+                <p>I LOVEE YOUUU SO MUCHHH SAYANG MAMASSSSS .. sehat sehat terus ya cantik 🫶🏻🥹❤️‍🩹</p>
             </div>
         </div>
 
-        <!-- NEW: Window Diary (Rahasia) -->
-        <div id="win-diary" class="window win-box w-[400px] h-[350px] top-20 left-[250px] z-40" style="display: none;">
-            <div class="win-header cursor-move" onmousedown="dragStart(event, 'win-diary')">
-                <span>📔 Diary Rahasia (Private)</span>
-                <button class="win-btn px-2 bg-red-400 text-white" onclick="closeWindow('win-diary')">X</button>
-            </div>
+        <div id="win-diary" class="window win-box w-[400px] h-[350px] top-20 left-[250px]" style="display: none;">
+            <div class="win-header" onmousedown="dragStart(event, 'win-diary')"><span>📔 Diary Rahasia</span><button class="win-btn" onclick="closeWindow('win-diary')">X</button></div>
             <div class="flex-1 p-2 bg-[#f0f0f0] flex flex-col">
                 <p class="text-sm mb-2 font-bold text-gray-600">Harapan untuk Diri Sendiri:</p>
-                <textarea id="diary-input" class="flex-1 w-full p-2 border-2 border-gray-400 font-body text-sm resize-none focus:outline-none" placeholder="Tulis harapan kamu di sini..."></textarea>
-                <div class="mt-2 flex justify-between items-center">
-                    <button onclick="saveDiary()" class="win-btn px-3 py-1 bg-blue-200 font-bold">💾 SIMPAN</button>
-                    <span class="text-xs text-gray-500 italic">*Mamas tidak akan tahu isinya :)</span>
-                </div>
+                <textarea id="diary-input" class="flex-1 w-full p-2 border-2 border-gray-400 font-body text-sm resize-none focus:outline-none"></textarea>
+                <div class="mt-2 flex justify-between items-center"><button onclick="saveDiary()" class="win-btn px-3 py-1 bg-blue-200 font-bold">💾 SIMPAN</button><span class="text-xs text-gray-500 italic">*Mamas tidak akan tahu</span></div>
             </div>
         </div>
 
-        <!-- NEW: Window Pesan ke Mamas (KEMBALI KE WA) -->
-        <div id="win-msg-mamas" class="window win-box w-[400px] h-[300px] top-32 left-[280px] z-40" style="display: none;">
-            <div class="win-header cursor-move" onmousedown="dragStart(event, 'win-msg-mamas')">
-                <span>💌 Pesan Untuk Mamas</span>
-                <button class="win-btn px-2 bg-red-400 text-white" onclick="closeWindow('win-msg-mamas')">X</button>
-            </div>
+        <div id="win-msg-mamas" class="window win-box w-[400px] h-[300px] top-32 left-[280px]" style="display: none;">
+            <div class="win-header" onmousedown="dragStart(event, 'win-msg-mamas')"><span>💌 Pesan Untuk Mamas</span><button class="win-btn" onclick="closeWindow('win-msg-mamas')">X</button></div>
             <div class="flex-1 p-2 bg-[#f0f0f0] flex flex-col">
                 <p class="text-sm mb-2 font-bold text-gray-600">Tulis pesan buat Mas Fuad:</p>
                 <textarea id="wa-input" class="flex-1 w-full p-2 border-2 border-gray-400 font-body text-sm resize-none focus:outline-none" placeholder="Mas Fuad, aku mau bilang..."></textarea>
                 <div class="mt-2 flex justify-between items-center">
-                    <button onclick="sendToWA()" class="win-btn px-3 py-1 bg-green-200 font-bold text-green-900">
-                        <i class="fab fa-whatsapp"></i> KIRIM KE WA
-                    </button>
-                    <span class="text-xs text-gray-500 italic">*Pesan ini akan dikirim ke Mamas</span>
+                    <button id="btn-kirim" onclick="kirimPesanKeInbox()" class="win-btn px-3 py-1 bg-green-200 font-bold text-green-900">KIRIM KE INBOX</button>
+                    <span class="text-xs text-gray-500 italic">*Terkirim ke Inbox.html</span>
                 </div>
             </div>
         </div>
 
-        <!-- NEW: Window Game LILIN -->
-        <div id="win-game" class="window win-box w-[450px] h-[450px] top-10 right-10 z-40" style="display: none;">
-            <div class="win-header cursor-move" onmousedown="dragStart(event, 'win-game')">
-                <span>🕯️ Magic Candle Game</span>
-                <button class="win-btn px-2 bg-red-400 text-white" onclick="closeWindow('win-game')">X</button>
-            </div>
-            <div class="flex-1 bg-black relative flex flex-col items-center justify-center p-4" id="game-area">
-                <div id="mic-control" class="absolute top-2 left-2 right-2 flex justify-between z-20">
-                    <button onclick="enableMic()" class="bg-gray-800 text-white text-xs px-2 py-1 border border-gray-600 rounded hover:bg-gray-700">🎤 Aktifkan Mic (Tiup)</button>
-                    <div class="text-white text-xs">Skor: <span id="candle-score">0</span></div>
-                </div>
-                <div class="cake-container mt-10">
-                    <div class="candle" id="c1"><div class="flame" onclick="blowCandle(1)"></div><div class="smoke"></div></div>
-                    <div class="candle" id="c2"><div class="flame" onclick="blowCandle(2)"></div><div class="smoke"></div></div>
-                    <div class="candle" id="c3"><div class="flame" onclick="blowCandle(3)"></div><div class="smoke"></div></div>
-                    <div class="candle" id="c4"><div class="flame" onclick="blowCandle(4)"></div><div class="smoke"></div></div>
-                    <div class="candle" id="c5"><div class="flame" onclick="blowCandle(5)"></div><div class="smoke"></div></div>
-                </div>
-                <div class="mt-8 text-white text-center font-pixel text-lg z-10">
-                    <p id="game-instruction">Tiup microphone atau Klik api untuk mematikan!</p>
-                    <p class="text-xs text-gray-400 mt-1">(Awas lilinnya jail, bisa nyala lagi! 😜)</p>
-                </div>
-                <button id="reset-candle-btn" onclick="resetCandles()" class="hidden mt-4 bg-yellow-400 text-black px-4 py-2 font-bold rounded animate-bounce">Main Lagi? 🎂</button>
+        <div id="win-game" class="window win-box w-[450px] h-[450px] top-10 right-10" style="display: none;">
+            <div class="win-header" onmousedown="dragStart(event, 'win-game')"><span>🕯️ Magic Candle</span><button class="win-btn" onclick="closeWindow('win-game')">X</button></div>
+            <div class="flex-1 bg-black relative flex flex-col items-center justify-center p-4">
+                <div class="absolute top-2 right-2"><button onclick="enableMic()" class="bg-gray-800 text-white text-xs px-2 py-1 rounded">🎤 Mic</button></div>
+                <div class="cake-container mt-10" id="candle-container"></div>
+                <div class="mt-8 text-white text-center font-pixel text-lg z-10"><p id="game-instruction">Tiup/Klik api!</p></div>
+                <button id="reset-candle-btn" onclick="resetCandles()" class="hidden mt-4 bg-yellow-400 text-black px-4 py-2 font-bold rounded animate-bounce">Main Lagi?</button>
             </div>
         </div>
 
-        <!-- NEW: Window Video -->
-        <div id="win-video" class="window win-box w-[500px] flex flex-col top-[15%] left-[20%] z-40" style="display: none;">
-             <div class="win-header cursor-move" onmousedown="dragStart(event, 'win-video')">
-                <span>🎬 Cinema - Video Kita</span>
-                <button class="win-btn px-2 bg-red-400 text-white" onclick="closeWindow('win-video')">X</button>
-            </div>
-            <div class="bg-black p-1 flex items-center justify-center">
-                <!-- GANTI FILE VIDEO DI SINI! -->
-                <video class="w-full h-[280px]" controls>
-                    <source src="video_kita.mp4" type="video/mp4">
-                    Browser kamu tidak support video ini.
-                </video>
-            </div>
+        <div id="win-video" class="window win-box w-[500px] top-[15%] left-[20%]" style="display: none;">
+            <div class="win-header" onmousedown="dragStart(event, 'win-video')"><span>🎬 Cinema</span><button class="win-btn" onclick="closeWindow('win-video')">X</button></div>
+            <div class="bg-black p-1 flex items-center justify-center"><video class="w-full h-[280px]" controls><source src="video_kita.mp4" type="video/mp4"></video></div>
         </div>
 
-        <!-- Window Gallery -->
-        <div id="win-gallery" class="window win-box w-[500px] top-20 left-40 flex flex-col z-40" style="display: none;">
-            <div class="win-header cursor-move" onmousedown="dragStart(event, 'win-gallery')">
-                <span>📸 Folder: Memories</span>
-                <button class="win-btn px-2 bg-red-400 text-white" onclick="closeWindow('win-gallery')">X</button>
-            </div>
-            <div class="flex-1 bg-white m-1 p-2 grid grid-cols-2 gap-2 overflow-y-auto max-h-[400px]">
-                
-                <!-- PHOTO ITEM 1 -->
-                <div class="win-box p-2 bg-gray-100 text-center cursor-pointer hover:bg-blue-100 transition" 
-                     onclick="openPhoto('https://i.pinimg.com/564x/2a/3a/0a/2a3a0a3d463868270525287515d4872c.jpg', 'Ini foto kamu pas masih kecil. Lucu banget sih, pipinya tumpah-tumpah! Gemes maksimal! 🥰')">
-                    <img src="https://i.pinimg.com/564x/2a/3a/0a/2a3a0a3d463868270525287515d4872c.jpg" class="w-full h-40 object-cover border-2 border-gray-300 pointer-events-none">
-                    <p class="font-pixel mt-1">Little_Angel.jpg</p>
-                </div>
-                
-                <!-- PHOTO ITEM 2 -->
-                <div class="win-box p-2 bg-gray-100 text-center cursor-pointer hover:bg-blue-100 transition" 
-                     onclick="openPhoto('https://i.pinimg.com/564x/4a/01/f9/4a01f9d51025595958742884a4448261.jpg', 'Kalo ini foto pas kita jalan-jalan berdua. Inget gak? Waktu itu kamu senyum manis banget sampai aku lupa segalanya. ❤️')">
-                    <img src="https://i.pinimg.com/564x/4a/01/f9/4a01f9d51025595958742884a4448261.jpg" class="w-full h-40 object-cover border-2 border-gray-300 pointer-events-none">
-                    <p class="font-pixel mt-1">Us_Moment.jpg</p>
-                </div>
-
-                <!-- PHOTO ITEM 3 -->
-                <div class="win-box p-2 bg-gray-100 text-center cursor-pointer hover:bg-blue-100 transition" 
-                     onclick="openPhoto('https://i.pinimg.com/564x/7e/e4/24/7ee4241e73f4e389e78297054f056f71.jpg', 'Masih inget gak ini dimana? Kita bener-bener ketawa lepas banget di sini.')">
-                    <img src="https://i.pinimg.com/564x/7e/e4/24/7ee4241e73f4e389e78297054f056f71.jpg" class="w-full h-40 object-cover border-2 border-gray-300 pointer-events-none">
-                    <p class="font-pixel mt-1">Happy.jpg</p>
-                </div>
-
-                <!-- PHOTO ITEM 4 -->
-                <div class="win-box p-2 bg-gray-100 text-center cursor-pointer hover:bg-blue-100 transition" 
-                     onclick="openPhoto('https://i.pinimg.com/564x/a4/0c/36/a40c36b6d5106173730e2007887756f7.jpg', 'Foto ini spesial banget buat aku. Kamu keliatan cantik banget di sini sayang.')">
-                    <img src="https://i.pinimg.com/564x/a4/0c/36/a40c36b6d5106173730e2007887756f7.jpg" class="w-full h-40 object-cover border-2 border-gray-300 pointer-events-none">
-                    <p class="font-pixel mt-1">Beautiful.jpg</p>
-                </div>
-
-                <!-- PHOTO ITEM 5 -->
-                <div class="win-box p-2 bg-gray-100 text-center cursor-pointer hover:bg-blue-100 transition" 
-                     onclick="openPhoto('https://i.pinimg.com/564x/c9/22/68/c92268d92cf2dbf96e3195683d9d3af9.jpg', 'Setiap liat foto ini aku jadi kangen kamu. Cepet ketemu yuk!')">
-                    <img src="https://i.pinimg.com/564x/c9/22/68/c92268d92cf2dbf96e3195683d9d3af9.jpg" class="w-full h-40 object-cover border-2 border-gray-300 pointer-events-none">
-                    <p class="font-pixel mt-1">Miss_U.jpg</p>
-                </div>
-
-                <!-- PHOTO ITEM 6 -->
-                <div class="win-box p-2 bg-gray-100 text-center cursor-pointer hover:bg-blue-100 transition" 
-                     onclick="openPhoto('https://i.pinimg.com/564x/d8/9f/fa/d89ffa36070a72097e3a95610815e347.jpg', 'Foto masa kecil kamu lagi. Gemes banget sih kamu, pengen nyubit pipinya!')">
-                    <img src="https://i.pinimg.com/564x/d8/9f/fa/d89ffa36070a72097e3a95610815e347.jpg" class="w-full h-40 object-cover border-2 border-gray-300 pointer-events-none">
-                    <p class="font-pixel mt-1">Baby_C.jpg</p>
-                </div>
-
-                <!-- PHOTO ITEM 7 -->
-                <div class="win-box p-2 bg-gray-100 text-center cursor-pointer hover:bg-blue-100 transition" 
-                     onclick="openPhoto('https://i.pinimg.com/564x/bd/6d/2c/bd6d2cb134608c02c6596950486c8724.jpg', 'Gak kerasa ya waktu cepet banget berlalu. Kamu udah tumbuh jadi wanita hebat sekarang.')">
-                    <img src="https://i.pinimg.com/564x/bd/6d/2c/bd6d2cb134608c02c6596950486c8724.jpg" class="w-full h-40 object-cover border-2 border-gray-300 pointer-events-none">
-                    <p class="font-pixel mt-1">Grow.jpg</p>
-                </div>
-
-                <!-- PHOTO ITEM 8 -->
-                <div class="win-box p-2 bg-gray-100 text-center cursor-pointer hover:bg-blue-100 transition" 
-                     onclick="openPhoto('https://i.pinimg.com/564x/4a/01/f9/4a01f9d51025595958742884a4448261.jpg', 'Apapun yang terjadi, aku bakal selalu ada buat kamu. Love you, Chelsea.')">
-                    <img src="https://i.pinimg.com/564x/4a/01/f9/4a01f9d51025595958742884a4448261.jpg" class="w-full h-40 object-cover border-2 border-gray-300 pointer-events-none">
-                    <p class="font-pixel mt-1">Forever.jpg</p>
-                </div>
-            </div>
-            <div class="p-1 text-xs font-body text-gray-600 bg-[#c0c0c0] border-t border-gray-400">Klik foto untuk melihat detail</div>
-        </div>
-
-        <!-- NEW: Window Image Viewer (Popup Penjelasan) - DEFAULT TERTUTUP -->
-        <div id="win-image-viewer" class="window win-box w-[500px] top-10 left-10 flex flex-col z-[70]" style="display: none;">
-            <div class="win-header cursor-move" onmousedown="dragStart(event, 'win-image-viewer')">
-                <span>🖼️ Image Viewer</span>
-                <button class="win-btn px-2 bg-red-400 text-white" onclick="closeWindow('win-image-viewer')">X</button>
-            </div>
-            <div class="flex-1 bg-white m-1 p-2 flex flex-col items-center overflow-y-auto max-h-[500px]">
-                <img id="viewer-img" src="" class="w-full max-h-[300px] object-contain mb-4 border-2 border-gray-300 bg-black">
-                <div class="w-full bg-pink-50 p-4 rounded border border-pink-200">
-                    <p class="font-bold text-deep-purple mb-1 text-xs">Mas Fuad says:</p>
-                    <p id="viewer-caption" class="font-body text-gray-700 italic text-sm leading-relaxed"></p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Window Music - DEFAULT TERTUTUP (Nanti dibuka JS) -->
-        <div id="win-music" class="window win-box w-[300px] top-[40%] right-[5%] flex flex-col z-40" style="display: none;">
-            <div class="win-header cursor-move" onmousedown="dragStart(event, 'win-music')">
-                <span>🎵 WinAmp</span>
-                <button class="win-btn px-2 bg-red-400 text-white" onclick="closeWindow('win-music')">X</button>
-            </div>
-            <div class="bg-black p-4 m-1 win-box-inset">
-                <div class="text-[#00ff00] font-pixel text-xl mb-2 marquee">
-                    <marquee>NOW PLAYING: Happy Birthday to Chelsea - Special Mix.mp3</marquee>
-                </div>
-                <div class="flex justify-center gap-2 mt-2">
-                    <button onclick="document.getElementById('bg-music').play()" class="win-btn px-3 py-1 font-bold">▶ PLAY</button>
-                    <button onclick="document.getElementById('bg-music').pause()" class="win-btn px-3 py-1 font-bold">⏸ PAUSE</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Window Cake - DEFAULT TERTUTUP (Nanti dibuka JS) -->
-        <div id="win-cake" class="window win-box w-[350px] top-[15%] left-[30%] flex flex-col items-center z-40" style="display: none;">
-            <div class="win-header w-full cursor-move" onmousedown="dragStart(event, 'win-cake')">
-                <span>🎂 Make a Wish!</span>
-                <button class="win-btn px-2 bg-red-400 text-white" onclick="closeWindow('win-cake')">X</button>
-            </div>
-            <div class="p-6 bg-pink-100 w-full text-center m-1 win-box-inset relative overflow-hidden">
-                <h3 class="font-bold text-deep-purple mb-4">Tiup Lilinnya Sayang! (Klik Kuenya)</h3>
-                <div class="cursor-pointer transition transform hover:scale-105" onclick="blowCandle(0)">
-                    <div class="text-6xl mb-2">🎂</div>
-                </div>
-                <p id="wish-text" class="mt-4 text-sm font-body text-gray-600 italic hidden">"Semoga panjang umur & sehat selalu!" 🎉</p>
-            </div>
+        <div id="win-gallery" class="window win-box w-[500px] top-20 left-40" style="display: none;">
+             <div class="win-header" onmousedown="dragStart(event, 'win-gallery')"><span>📸 Memories</span><button class="win-btn" onclick="closeWindow('win-gallery')">X</button></div>
+             <div id="gallery-content" class="flex-1 bg-white m-1 p-2 grid grid-cols-2 gap-2 overflow-y-auto max-h-[400px]"></div>
         </div>
         
-        <!-- Window Calculator - DEFAULT TERTUTUP -->
-        <div id="win-calc" class="window win-box w-[300px] top-[40%] right-[20%] flex flex-col z-40" style="display: none;">
-             <div class="win-header cursor-move" onmousedown="dragStart(event, 'win-calc')">
-                <span>🧮 Love Calculator</span>
-                <button class="win-btn px-2 bg-red-400 text-white" onclick="closeWindow('win-calc')">X</button>
-            </div>
-             <div class="p-4 bg-white m-1 win-box-inset font-pixel text-lg">
-                <p>Chelsea's Age:</p>
-                <p id="age-calc" class="text-blue-600 font-bold mb-2">Calculating...</p>
-                <hr class="border-gray-400 my-2">
-                <p>Days since born:</p>
-                <p id="days-calc" class="text-pink-600 font-bold">Calculating...</p>
-             </div>
+        <div id="win-image-viewer" class="window win-box w-[500px] top-10 left-10 z-[70]" style="display: none;">
+            <div class="win-header" onmousedown="dragStart(event, 'win-image-viewer')"><span>🖼️ Viewer</span><button class="win-btn" onclick="closeWindow('win-image-viewer')">X</button></div>
+            <div class="flex-1 bg-white m-1 p-2 flex flex-col items-center"><img id="viewer-img" class="w-full max-h-[300px] object-contain mb-4 bg-black"><div class="w-full bg-pink-50 p-4 rounded"><p class="font-bold text-xs">Mas Fuad says:</p><p id="viewer-caption" class="text-sm italic"></p></div></div>
         </div>
 
-        <!-- Window Error (Mantan) - DEFAULT TERTUTUP -->
-        <div id="win-error" class="window win-box w-[300px] flex flex-col top-[40%] left-[40%] z-[999]" style="display: none;">
-            <div class="win-header cursor-move" onmousedown="dragStart(event, 'win-error')">
-                <span>⚠️ Error</span>
-                <button class="win-btn px-2 bg-red-400 text-white" onclick="closeWindow('win-error')">X</button>
-            </div>
-            <div class="p-4 bg-[#c0c0c0] flex items-center gap-4">
-                <img src="https://cdn-icons-png.flaticon.com/512/1828/1828843.png" class="w-10 h-10">
-                <div>
-                    <p class="font-body text-sm font-bold mb-2">Access Denied!</p>
-                    <p class="font-body text-xs">Mas Fuad tidak mengizinkan kenangan buruk disimpan di sini. 😜</p>
-                </div>
-            </div>
-            <div class="p-2 flex justify-center bg-[#c0c0c0]">
-                <button class="win-btn px-4 py-1 font-bold" onclick="closeWindow('win-error')">OK</button>
-            </div>
+        <div id="win-calc" class="window win-box w-[300px] top-[40%] right-[20%]" style="display: none;"><div class="win-header" onmousedown="dragStart(event, 'win-calc')"><span>🧮 Calculator</span><button class="win-btn" onclick="closeWindow('win-calc')">X</button></div><div class="p-4 bg-white font-pixel text-lg"><p>Age: <span id="age-calc" class="text-blue-600">...</span></p><hr class="my-2"><p>Days: <span id="days-calc" class="text-pink-600">...</span></p></div></div>
+        <div id="win-error" class="window win-box w-[300px] top-[40%] left-[40%] z-[999]" style="display: none;"><div class="win-header" onmousedown="dragStart(event, 'win-error')"><span>⚠️ Error</span><button class="win-btn" onclick="closeWindow('win-error')">X</button></div><div class="p-4 bg-[#c0c0c0] flex items-center gap-4"><img src="https://cdn-icons-png.flaticon.com/512/3342/3342176.png" class="w-10"><div><p class="font-bold text-sm">Access Denied!</p><p class="text-xs">Kenangan buruk dilarang! 😜</p></div></div><div class="p-2 flex justify-center bg-[#c0c0c0]"><button class="win-btn px-4 font-bold" onclick="closeWindow('win-error')">OK</button></div></div>
+
+        <!-- Music & Cake (Hidden by CSS, Shown by JS) -->
+        <div id="win-music" class="window win-box w-[300px] top-[40%] right-[5%]" style="display: none;">
+            <div class="win-header" onmousedown="dragStart(event, 'win-music')"><span>🎵 WinAmp</span><button class="win-btn" onclick="closeWindow('win-music')">X</button></div>
+            <div class="bg-black p-4 m-1 win-box-inset text-white"><marquee>NOW PLAYING: Happy Birthday to Chelsea</marquee><div class="flex justify-center gap-2 mt-2"><button onclick="document.getElementById('bg-music').play()" class="win-btn font-bold">▶</button><button onclick="document.getElementById('bg-music').pause()" class="win-btn font-bold">⏸</button></div></div>
         </div>
 
-        <!-- TASKBAR -->
-        <div id="taskbar" class="absolute bottom-0 w-full h-10 flex items-center px-2 gap-2 z-[100]">
-            <button class="win-btn px-2 py-1 flex items-center gap-2 font-bold text-lg start-btn bg-[#c0c0c0]" onclick="toggleStartMenu()">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Windows_logo_and_wordmark_-_1995-2001.svg/1200px-Windows_logo_and_wordmark_-_1995-2001.svg.png" class="h-4">
-                Start
-            </button>
-            <div class="border-l-2 border-gray-400 h-6 mx-1"></div>
-            <div class="ml-auto win-box-inset px-3 py-1 bg-[#c0c0c0] text-xs font-pixel flex items-center gap-2">
-                <i class="fas fa-volume-up"></i>
-                <span id="clock">12:00 PM</span>
-            </div>
+        <div id="win-cake" class="window win-box w-[350px] top-[15%] left-[30%]" style="display: none;">
+            <div class="win-header" onmousedown="dragStart(event, 'win-cake')"><span>🎂 Make a Wish!</span><button class="win-btn" onclick="closeWindow('win-cake')">X</button></div>
+            <div class="p-6 bg-pink-100 text-center m-1 win-box-inset relative overflow-hidden"><div class="text-6xl mb-2 cursor-pointer transition transform hover:scale-105" onclick="blowCandleGeneric()">🎂</div><p id="wish-text" class="hidden mt-4 text-sm font-body">"Semoga panjang umur!" 🎉</p></div>
         </div>
 
+        <div id="taskbar" class="absolute bottom-0 w-full h-10 flex items-center px-2 gap-2 z-[100]"><button class="win-btn px-2 py-1 flex items-center gap-2 font-bold text-lg" onclick="alert('Menu Start Coming Soon!')"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Windows_logo_and_wordmark_-_1995-2001.svg/1200px-Windows_logo_and_wordmark_-_1995-2001.svg.png" class="h-4"> Start</button><div class="ml-auto win-box-inset px-3 py-1 bg-[#c0c0c0] text-xs font-pixel"><span id="clock">12:00</span></div></div>
     </main>
 
-    <!-- JS Logic -->
     <script>
-        // === BOOT & LOGIN ===
-        const bootText = [
-            "Initializing Chelsea's Heart...",
-            "Loading Memories... [OK]",
-            "Checking Cuteness Level... [OVERLOAD]",
-            "Starting ChelseaOS...",
-            "System Ready."
-        ];
-        let lineIndex = 0;
-        
-        function typeBoot() {
-            if (lineIndex < bootText.length) {
-                const p = document.createElement('p');
-                p.textContent = "> " + bootText[lineIndex];
-                p.className = "typing-cursor mb-1";
-                document.getElementById('boot-text').appendChild(p);
-                if (lineIndex > 0) document.getElementById('boot-text').children[lineIndex-1].classList.remove('typing-cursor');
-                lineIndex++;
-                setTimeout(typeBoot, 800);
-            } else {
-                document.getElementById('click-prompt').classList.remove('hidden');
-                document.getElementById('boot-text').lastChild.classList.remove('typing-cursor');
-            }
-        }
-        window.onload = typeBoot;
+        const bootText = ["Initializing Heart...", "Loading Memories...", "Checking Cuteness...", "Starting ChelseaOS...", "Ready."];
+        let lineIdx = 0;
+        window.onload = () => {
+            const type = () => {
+                if (lineIdx < bootText.length) {
+                    const p = document.createElement('p'); p.textContent = "> " + bootText[lineIdx++]; p.className = "typing-cursor mb-1";
+                    document.getElementById('boot-text').appendChild(p);
+                    if(lineIdx>1) document.getElementById('boot-text').children[lineIdx-2].classList.remove('typing-cursor');
+                    setTimeout(type, 500);
+                } else document.getElementById('click-prompt').classList.remove('hidden');
+            }; type();
+
+            // INIT GALLERY (8 FOTO)
+            const photos = [
+                {src:'https://i.pinimg.com/564x/2a/3a/0a/2a3a0a3d463868270525287515d4872c.jpg', msg:'Ini foto kamu pas masih kecil. Lucu banget sih! 🥰', name:'Little_Angel.jpg'},
+                {src:'https://i.pinimg.com/564x/4a/01/f9/4a01f9d51025595958742884a4448261.jpg', msg:'Pas jalan berdua. ❤️', name:'Us_Moment.jpg'},
+                {src:'https://i.pinimg.com/564x/7e/e4/24/7ee4241e73f4e389e78297054f056f71.jpg', msg:'Ketawa lepas!', name:'Happy.jpg'},
+                {src:'https://i.pinimg.com/564x/a4/0c/36/a40c36b6d5106173730e2007887756f7.jpg', msg:'Cantik banget.', name:'Beautiful.jpg'},
+                {src:'https://i.pinimg.com/564x/c9/22/68/c92268d92cf2dbf96e3195683d9d3af9.jpg', msg:'Kangen kamu.', name:'Miss_U.jpg'},
+                {src:'https://i.pinimg.com/564x/d8/9f/fa/d89ffa36070a72097e3a95610815e347.jpg', msg:'Cubittt!', name:'Baby_C.jpg'},
+                {src:'https://i.pinimg.com/564x/bd/6d/2c/bd6d2cb134608c02c6596950486c8724.jpg', msg:'Wanita hebat.', name:'Grow.jpg'},
+                {src:'https://i.pinimg.com/564x/4a/01/f9/4a01f9d51025595958742884a4448261.jpg', msg:'Forever.', name:'Forever.jpg'}
+            ];
+            document.getElementById('gallery-content').innerHTML = photos.map(p => `<div class="win-box p-2 bg-gray-100 text-center cursor-pointer hover:bg-blue-100 transition" onclick="openPhoto('${p.src}', '${p.msg}')"><img src="${p.src}" class="w-full h-40 object-cover border-2 border-gray-300 pointer-events-none"><p class="font-pixel mt-1">${p.name}</p></div>`).join('');
+
+            // INIT CANDLES
+            document.getElementById('candle-container').innerHTML = Array(5).fill(0).map((_,i) => `<div class="candle" id="c${i+1}"><div class="flame" onclick="blowCandle(${i+1})"></div><div class="smoke"></div></div>`).join('');
+        };
 
         function bootSystem() {
-            if (lineIndex >= bootText.length) {
-                var elem = document.documentElement;
-                if (elem.requestFullscreen) {
-                    elem.requestFullscreen().catch(e=>console.log(e));
-                } else if (elem.webkitRequestFullscreen) {
-                    elem.webkitRequestFullscreen();
-                } else if (elem.msRequestFullscreen) {
-                    elem.msRequestFullscreen();
-                }
-
-                document.getElementById('boot-screen').style.display = 'none';
-                document.getElementById('login-screen').classList.remove('hidden');
-                document.getElementById('login-screen').classList.add('flex');
-            }
+            document.documentElement.requestFullscreen().catch(e=>{});
+            document.getElementById('boot-screen').style.display = 'none';
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('login-screen').classList.add('flex');
         }
 
-        // Logic check password
         function checkLogin() {
-            const pass = document.getElementById('login-pass').value.toLowerCase().trim();
-            // Password
-            if(pass === "cece cantik") { 
-                login();
+            if(document.getElementById('login-pass').value.toLowerCase().trim() === "cece cantik") {
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('desktop').classList.remove('hidden');
+                document.getElementById('desktop').classList.add('block');
+                
+                // --- FIX: CUMA BUKA MUSIK & KUE ---
+                // Pastikan yang lain tertutup
+                const allWindows = document.querySelectorAll('.window');
+                allWindows.forEach(w => w.style.setProperty('display', 'none', 'important'));
+
+                // Buka yang diperlukan
+                setTimeout(() => openWindow('win-music'), 500); 
+                setTimeout(() => openWindow('win-cake'), 1000);
+                
+                try { document.getElementById('bg-music').play(); } catch(e){}
+                setInterval(() => document.getElementById('clock').innerText = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}), 1000);
+                
+                // Calc Age
+                const diff = new Date() - new Date('2007-02-23');
+                document.getElementById('age-calc').innerText = Math.floor(diff / 31557600000) + " Years";
+                document.getElementById('days-calc').innerText = Math.floor(diff / 86400000) + " Days";
+                
+                if(localStorage.getItem('chelsea_diary')) document.getElementById('diary-input').value = localStorage.getItem('chelsea_diary');
             } else {
-                const err = document.getElementById('login-error');
-                err.classList.remove('hidden');
-                setTimeout(() => err.classList.add('hidden'), 2000);
+                document.getElementById('login-error').classList.remove('hidden');
             }
         }
+        document.getElementById('login-pass').addEventListener('keypress', function (e) { if (e.key === 'Enter') checkLogin(); });
 
-        document.getElementById('login-pass').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                checkLogin();
-            }
-        });
-
-        function login() {
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('desktop').classList.remove('hidden');
-            document.getElementById('desktop').classList.add('block');
-            
-            // HANYA INI YANG JALAN OTOMATIS
-            setTimeout(() => openWindow('win-music'), 500);  // Playlist
-            setTimeout(() => openWindow('win-cake'), 1000);  // Kue
-            
-            try { document.getElementById('bg-music').play(); } catch(e) {}
-            setInterval(updateClock, 1000);
-            calculateAge();
-            loadDiary();
-        }
-
-        // === WINDOW SYSTEM ===
         let zIndex = 50;
-        function openWindow(id) {
-            const win = document.getElementById(id);
-            // KITA PAKSA MUNCUL MENGGUNAKAN STYLE PROPERTY
-            win.style.display = 'flex'; 
-            win.style.setProperty('display', 'flex', 'important');
-            win.classList.add('active');
-            bringToFront(id);
+        function openWindow(id) { 
+            const w = document.getElementById(id); 
+            w.style.setProperty('display', 'flex', 'important'); 
+            w.classList.add('active'); 
+            w.style.zIndex = ++zIndex; 
         }
-        
         function closeWindow(id) { 
-            const win = document.getElementById(id);
-            win.style.display = 'none';
-            win.style.setProperty('display', 'none', 'important');
-            win.classList.remove('active');
+            const w = document.getElementById(id); 
+            w.style.setProperty('display', 'none', 'important'); 
+            w.classList.remove('active'); 
         }
-        
-        function bringToFront(id) { document.getElementById(id).style.zIndex = ++zIndex; }
+        function dragStart(e, id) { 
+            let curWin = document.getElementById(id); let rect = curWin.getBoundingClientRect();
+            let initX = e.clientX - rect.left; let initY = e.clientY - rect.top;
+            let isDragging = true; curWin.style.zIndex = ++zIndex;
 
-        let isDragging = false, currentWindow = null;
-        let initialX, initialY, currentX, currentY, xOffset = 0, yOffset = 0;
-
-        function dragStart(e, id) {
-            const win = document.getElementById(id);
-            currentWindow = win;
-            const rect = win.getBoundingClientRect();
-            initialX = e.clientX - rect.left;
-            initialY = e.clientY - rect.top;
-            isDragging = true;
-            bringToFront(id);
+            function move(e) { if(isDragging) { e.preventDefault(); curWin.style.left = (e.clientX - initX) + 'px'; curWin.style.top = (e.clientY - initY) + 'px'; curWin.style.transform='none'; }}
+            function stop() { isDragging = false; document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', stop); }
+            
+            document.addEventListener('mousemove', move);
+            document.addEventListener('mouseup', stop);
         }
+        document.querySelectorAll('.window').forEach(w => w.addEventListener('mousedown', () => w.style.zIndex = ++zIndex));
 
-        document.addEventListener('mousemove', (e) => {
-            if (isDragging && currentWindow) {
-                e.preventDefault();
-                currentWindow.style.left = (e.clientX - initialX) + "px";
-                currentWindow.style.top = (e.clientY - initialY) + "px";
-                currentWindow.style.transform = "none"; 
-            }
-        });
+        function openPhoto(src, msg) { document.getElementById('viewer-img').src=src; document.getElementById('viewer-caption').innerText=msg; openWindow('win-image-viewer'); }
+        function saveDiary() { localStorage.setItem('chelsea_diary', document.getElementById('diary-input').value); alert("Tersimpan!"); }
+        function blowCandleGeneric() { document.getElementById('wish-text').classList.remove('hidden'); confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } }); }
 
-        document.addEventListener('mouseup', () => { isDragging = false; currentWindow = null; });
-        document.querySelectorAll('.window').forEach(win => win.addEventListener('mousedown', () => bringToFront(win.id)));
-
-        // === PHOTO VIEWER LOGIC ===
-        function openPhoto(imageSrc, captionText) {
-            const viewer = document.getElementById('win-image-viewer');
-            const imgEl = document.getElementById('viewer-img');
-            const captionEl = document.getElementById('viewer-caption');
-            imgEl.src = imageSrc;
-            captionEl.innerText = captionText;
-            openWindow('win-image-viewer');
-        }
-
-        // === APP LOGIC ===
-        function updateClock() {
-            document.getElementById('clock').innerText = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        }
-
-        function calculateAge() {
-            const birth = new Date('2007-02-23');
-            const now = new Date();
-            let age = now.getFullYear() - birth.getFullYear();
-            const m = now.getMonth() - birth.getMonth();
-            if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
-            const diffDays = Math.ceil(Math.abs(now - birth) / (1000 * 60 * 60 * 24)); 
-            document.getElementById('age-calc').innerText = `${age} Years Old`;
-            document.getElementById('days-calc').innerText = `${diffDays} Days`;
-        }
-
-        function blowCandleGeneric() {
-            document.getElementById('wish-text').classList.remove('hidden');
-            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-        }
-
-        function saveDiary() {
-            const text = document.getElementById('diary-input').value;
-            localStorage.setItem('chelsea_diary', text);
-            alert("Harapan kamu sudah tersimpan aman di hati (dan browser ini)! ❤️");
-        }
-        function loadDiary() {
-            const saved = localStorage.getItem('chelsea_diary');
-            if(saved) document.getElementById('diary-input').value = saved;
-        }
-
-        function sendToWA() {
-            const text = document.getElementById('wa-input').value;
-            if(!text) { alert("Tulis dulu dong pesannya! 😜"); return; }
-            const encodedText = encodeURIComponent(text);
-            const myNumber = "6281234567890"; // GANTI NOMOR WA KAMU DI SINI
-            window.open(`https://wa.me/${myNumber}?text=${encodedText}`, '_blank');
-        }
-
-        // === 6. MAGIC CANDLE GAME LOGIC ===
-        const candles = [
-            { id: 1, reignites: 2, isOff: false },
-            { id: 2, reignites: 1, isOff: false },
-            { id: 3, reignites: 3, isOff: false },
-            { id: 4, reignites: 0, isOff: false },
-            { id: 5, reignites: 1, isOff: false }
-        ];
-        
+        const c_data = Array(5).fill().map((_,i)=>({id:i+1, r: Math.floor(Math.random()*3), off:false}));
         function blowCandle(id) {
             if (id === 0) { blowCandleGeneric(); return; }
-            const candleObj = candles[id-1];
-            if(candleObj.isOff) return;
+            const c = c_data[id-1]; if(c.off) return;
             const el = document.getElementById('c'+id);
-            const flame = el.querySelector('.flame');
-            const smoke = el.querySelector('.smoke');
-            flame.classList.add('off');
-            smoke.classList.add('active');
-            if (candleObj.reignites > 0) {
-                setTimeout(() => {
-                    flame.classList.remove('off');
-                    smoke.classList.remove('active');
-                    candleObj.reignites--;
-                }, Math.random() * 1000 + 800);
-            } else {
-                candleObj.isOff = true;
-                checkAllCandles();
-            }
+            el.querySelector('.flame').classList.add('off'); el.querySelector('.smoke').classList.add('active');
+            if(c.r > 0) setTimeout(() => { el.querySelector('.flame').classList.remove('off'); el.querySelector('.smoke').classList.remove('active'); c.r--; }, Math.random()*1000+800);
+            else { c.off=true; if(c_data.every(x=>x.off)) { confetti(); document.getElementById('game-instruction').innerHTML="HAPPY BIRTHDAY! ❤️"; document.getElementById('reset-candle-btn').classList.remove('hidden'); } }
         }
-
-        function checkAllCandles() {
-            if (candles.every(c => c.isOff)) {
-                confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
-                document.getElementById('game-instruction').innerHTML = "SELAMAT ULANG TAHUN SAYANG! <br>Semoga keinginanmu terkabul! ❤️";
-                document.getElementById('game-instruction').classList.add('text-yellow-400', 'font-bold');
-                document.getElementById('reset-candle-btn').classList.remove('hidden');
-            }
-        }
-
         function resetCandles() {
-            candles.forEach(c => {
-                c.reignites = Math.floor(Math.random() * 3);
-                c.isOff = false;
-                const el = document.getElementById('c'+c.id);
-                el.querySelector('.flame').classList.remove('off');
-                el.querySelector('.smoke').classList.remove('active');
-            });
-            document.getElementById('reset-candle-btn').classList.add('hidden');
-            document.getElementById('game-instruction').innerHTML = "Tiup microphone atau Klik api untuk mematikan!";
-            document.getElementById('game-instruction').classList.remove('text-yellow-400', 'font-bold');
+            c_data.forEach(c => { c.r = Math.floor(Math.random()*3); c.off=false; const el=document.getElementById('c'+c.id); el.querySelector('.flame').classList.remove('off'); el.querySelector('.smoke').classList.remove('active'); });
+            document.getElementById('reset-candle-btn').classList.add('hidden'); document.getElementById('game-instruction').innerHTML = "Tiup/Klik api!";
         }
-
-        let micActive = false;
         function enableMic() {
-            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                navigator.mediaDevices.getUserMedia({ audio: true })
-                .then(stream => {
-                    micActive = true;
-                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    const analyser = audioContext.createAnalyser();
-                    const microphone = audioContext.createMediaStreamSource(stream);
-                    const javascriptNode = audioContext.createScriptProcessor(2048, 1, 1);
-                    analyser.smoothingTimeConstant = 0.8;
-                    analyser.fftSize = 1024;
-                    microphone.connect(analyser);
-                    analyser.connect(javascriptNode);
-                    javascriptNode.connect(audioContext.destination);
-                    javascriptNode.onaudioprocess = function() {
-                        const array = new Uint8Array(analyser.frequencyBinCount);
-                        analyser.getByteFrequencyData(array);
-                        let values = 0;
-                        const length = array.length;
-                        for (let i = 0; i < length; i++) { values += array[i]; }
-                        const average = values / length;
-                        if (average > 40) { 
-                            const litCandles = candles.filter(c => !c.isOff);
-                            if(litCandles.length > 0) {
-                                const target = litCandles[Math.floor(Math.random() * litCandles.length)];
-                                blowCandle(target.id);
-                            }
-                        }
-                    }
-                    alert("Mikrofon Aktif! Coba tiup lilinnya (ke arah HP/Laptop) 🌬️");
-                })
-                .catch(err => {
-                    alert("Gagal akses mikrofon. Pakai klik aja ya! (Mungkin browser memblokir)");
-                    console.error(err);
-                });
-            } else {
-                alert("Browser kamu gak support fitur ini. Klik lilin aja ya!");
-            }
+            navigator.mediaDevices.getUserMedia({audio:true}).then(s => {
+                const ctx = new (window.AudioContext||window.webkitAudioContext)(), analyser = ctx.createAnalyser(), mic = ctx.createMediaStreamSource(s), script = ctx.createScriptProcessor(2048,1,1);
+                mic.connect(analyser); analyser.connect(script); script.connect(ctx.destination);
+                script.onaudioprocess = () => {
+                    const arr = new Uint8Array(analyser.frequencyBinCount); analyser.getByteFrequencyData(arr);
+                    if((arr.reduce((a,b)=>a+b)/arr.length) > 40) { const lit = c_data.filter(c=>!c.off); if(lit.length) blowCandle(lit[Math.floor(Math.random()*lit.length)].id); }
+                }; alert("Mic Aktif! Tiup!");
+            }).catch(()=>alert("Mic Error. Klik aja!"));
         }
     </script>
 </body>
