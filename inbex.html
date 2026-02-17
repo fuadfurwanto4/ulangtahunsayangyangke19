@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inbox Spesial 💌</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, query, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        signInAnonymously(auth).then((user) => {
+            if(!user) return;
+            const q = collection(db, 'artifacts', appId, 'public', 'data', 'chelsea_messages');
+            
+            // Listen real-time
+            onSnapshot(q, (snapshot) => {
+                const list = document.getElementById('msg-list');
+                list.innerHTML = '';
+                const msgs = [];
+                snapshot.forEach(doc => msgs.push(doc.data()));
+                
+                // Sort manual (karena Firestore rule kadang strict soal index)
+                msgs.sort((a,b) => new Date(b.date) - new Date(a.date));
+
+                if(msgs.length === 0) {
+                    list.innerHTML = '<p class="text-center text-gray-500 mt-10">Belum ada pesan masuk nih, Mas...</p>';
+                } else {
+                    msgs.forEach(m => {
+                        const div = document.createElement('div');
+                        div.className = "bg-white p-4 rounded-lg shadow border-l-4 border-pink-500 mb-4";
+                        div.innerHTML = `<p class="text-xs text-gray-400 mb-1">${m.date}</p><p class="text-gray-800 font-medium">${m.msg}</p>`;
+                        list.appendChild(div);
+                    });
+                }
+            }, (error) => console.log(error));
+        });
+    </script>
+</head>
+<body class="bg-pink-50 min-h-screen p-6 font-sans">
+    <div class="max-w-md mx-auto">
+        <h1 class="text-2xl font-bold text-pink-600 mb-6 text-center">💌 Inbox dari Chelsea</h1>
+        <div id="msg-list">
+            <p class="text-center text-gray-500 mt-10 animate-pulse">Menghubungkan ke satelit cinta...</p>
+        </div>
+    </div>
+</body>
+</html>
